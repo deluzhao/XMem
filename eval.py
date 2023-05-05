@@ -133,6 +133,9 @@ torch.autograd.set_grad_enabled(False)
 # Set up loader
 meta_loader = meta_dataset.get_datasets()
 
+device = 0
+print("Beginning mem:", torch.cuda.memory_allocated(device))
+
 # Load our checkpoint
 network = XMem(config, args.model).cuda().eval()
 if args.model is not None:
@@ -143,6 +146,8 @@ else:
 
 total_process_time = 0
 total_frames = 0
+
+print("Eval start:", torch.cuda.memory_allocated(device))
 
 # Start eval
 for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect_stdout=True):
@@ -181,11 +186,15 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
             end = torch.cuda.Event(enable_timing=True)
             start.record()
 
+            if ti == 1:
+                print("Process start frame 1:", torch.cuda.memory_allocated(device))
+
             if not first_mask_loaded:
                 if msk is not None:
                     first_mask_loaded = True
                 else:
                     # no point to do anything without a mask
+                    print("After first timestep", torch.cuda.memory_allocated(device))
                     continue
 
             if args.flip:
@@ -204,6 +213,9 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
 
             # Run the model on this frame
             prob = processor.step(rgb, msk, labels, end=(ti==vid_length-1))
+
+            if ti == 1:
+                print("After model run on frame 1:", torch.cuda.memory_allocated(device))
 
             # Upsample to original size if needed
             if need_resize:
