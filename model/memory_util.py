@@ -1,10 +1,11 @@
 import math
 import numpy as np
 import torch
+import os
 from typing import Optional
 
 
-def get_similarity(mk, ms, qk, qe):
+def get_similarity(mk, ms, qk, qe, download=False):
     # used for training/inference and memory reading/memory potentiation
     # mk: B x CK x [N]    - Memory keys
     # ms: B x  1 x [N]    - Memory shrinkage
@@ -17,6 +18,7 @@ def get_similarity(mk, ms, qk, qe):
     qk = qk.flatten(start_dim=2)
     qe = qe.flatten(start_dim=2) if qe is not None else None
 
+    
     if qe is not None:
         # See appendix for derivation
         # or you can just trust me ヽ(ー_ー )ノ
@@ -36,6 +38,12 @@ def get_similarity(mk, ms, qk, qe):
     else:
         similarity = similarity / math.sqrt(CK)   # B*N*HW
 
+    if download:
+        download_path = os.path.join("./output/singletest/")
+        os.makedirs(download_path, exist_ok=True)
+        d = {'mk': mk, 'ms': ms, 'qk': qk, 'qe': qe, 'sim': similarity}
+        torch.save(d, 'tensors.pt')
+        
     return similarity
 
 def do_softmax(similarity, top_k: Optional[int]=None, inplace=False, return_usage=False):
