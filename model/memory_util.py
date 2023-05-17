@@ -42,7 +42,7 @@ def get_similarity(mk, ms, qk, qe, download=False):
         download_path = os.path.join("./output/singletest/")
         os.makedirs(download_path, exist_ok=True)
         d = {'mk': mk, 'ms': ms, 'qk': qk, 'qe': qe, 'sim': similarity}
-        torch.save(d, 'tensors.pt')
+        torch.save(d, './output/singletest/tensors.pt')
         
     return similarity
 
