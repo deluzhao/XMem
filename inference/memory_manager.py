@@ -76,11 +76,9 @@ class MemoryManager:
             memory_key = torch.cat([self.long_mem.key, self.work_mem.key], -1)
             shrinkage = torch.cat([self.long_mem.shrinkage, self.work_mem.shrinkage], -1) 
 
-            if self.frames_processed == 10 and self.download_tensor:
-                similarity = get_similarity(memory_key, shrinkage, query_key, selection, download=True)
-            else:
-                similarity = get_similarity(memory_key, shrinkage, query_key, selection)
-                self.frames_processed += 1
+            
+            similarity = get_similarity(memory_key, shrinkage, query_key, selection, frame=self.frames_processed)
+            self.frames_processed += 1
 
             work_mem_similarity = similarity[:, long_mem_size:]
             long_mem_similarity = similarity[:, :long_mem_size]

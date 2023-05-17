@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 
-def get_similarity(mk, ms, qk, qe, download=False):
+def get_similarity(mk, ms, qk, qe, frame=0):
     # used for training/inference and memory reading/memory potentiation
     # mk: B x CK x [N]    - Memory keys
     # ms: B x  1 x [N]    - Memory shrinkage
@@ -38,11 +38,11 @@ def get_similarity(mk, ms, qk, qe, download=False):
     else:
         similarity = similarity / math.sqrt(CK)   # B*N*HW
 
-    if download:
-        download_path = os.path.join("./output/singletest/")
+    if frame < 75:
+        download_path = "./output/singletest/tensors"
         os.makedirs(download_path, exist_ok=True)
         d = {'mk': mk, 'ms': ms, 'qk': qk, 'qe': qe, 'sim': similarity}
-        torch.save(d, './output/singletest/tensors.pt')
+        torch.save(d, './output/singletest/tensors/' + frame + '.pt')
         
     return similarity
 
