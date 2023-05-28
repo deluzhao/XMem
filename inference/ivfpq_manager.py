@@ -50,7 +50,7 @@ class IVFPQManager:
         x_exp = D.exp_()
         x_exp /= torch.sum(x_exp, dim=1, keepdim=True)
 
-        affinity = torch.zeros_like(b, self.mem.v.shape[-1], h * w).scatter_(1, I, x_exp) # B*N*HW
+        affinity = torch.zeros(b, self.mem.v.shape[-1], h * w).scatter_(1, I, x_exp) # B*N*HW
         
 
         # Shared affinity within each group
