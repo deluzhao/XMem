@@ -35,9 +35,6 @@ class MemoryManager:
 
         self.reset_config = True
 
-        self.frames_processed = 0
-        self.download_tensor = config['download_tensor']
-
     def update_config(self, config):
         self.reset_config = True
         self.hidden_dim = config['hidden_dim']
@@ -69,17 +66,14 @@ class MemoryManager:
         """
         Memory readout using keys
         """
-        
+
         if self.enable_long_term and self.long_mem.engaged():
             # Use long-term memory
             long_mem_size = self.long_mem.size
             memory_key = torch.cat([self.long_mem.key, self.work_mem.key], -1)
             shrinkage = torch.cat([self.long_mem.shrinkage, self.work_mem.shrinkage], -1) 
 
-            
-            similarity = get_similarity(memory_key, shrinkage, query_key, selection, frame=self.frames_processed)
-            self.frames_processed += 1
-
+            similarity = get_similarity(memory_key, shrinkage, query_key, selection)
             work_mem_similarity = similarity[:, long_mem_size:]
             long_mem_similarity = similarity[:, :long_mem_size]
 
