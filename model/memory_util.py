@@ -27,6 +27,7 @@ def get_similarity(mk, ms, qk, qe, frame=0):
         two_ab = 2 * (mk @ (qk * qe))
         b_sq = (qe * qk.pow(2)).sum(1, keepdim=True)
         similarity = (-a_sq+two_ab-b_sq)
+
     else:
         # similar to STCN if we don't have the selection term
         a_sq = mk.pow(2).sum(1).unsqueeze(2)
