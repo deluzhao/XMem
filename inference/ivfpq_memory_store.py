@@ -35,13 +35,13 @@ class IVFPQMemoryStore:
 
         # add data
         if not self.index.is_trained:
-            self.index.train(key[0])
-            self.index.add(key[0])
+            self.index.train(key[0].transpose(0, 1).contiguous().float())
+            self.index.add(key[0].transpose(0, 1).contiguous().float())
             self.s = shrinkage
             self.e = selection
             self.v = value
         else:
-            self.index.add(key[0])
+            self.index.add(key[0].transpose(0, 1).contiguous().float())
             self.v = torch.cat([self.v, value], -1)
             if shrinkage is not None:
                 self.s = torch.cat([self.s, shrinkage], -1)
