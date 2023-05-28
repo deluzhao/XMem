@@ -1,4 +1,5 @@
 from inference.memory_manager import MemoryManager
+from inference.ivfpq_manager import IVFPQManager
 from model.network import XMem
 from model.aggregate import aggregate
 import torch
@@ -12,6 +13,7 @@ class InferenceCore:
         self.mem_every = config['mem_every']
         self.deep_update_every = config['deep_update_every']
         self.enable_long_term = config['enable_long_term']
+        self.ivfpq = config['ivfpq']
 
         # if deep_update_every < 0, synchronize deep update with memory frame
         self.deep_update_sync = (self.deep_update_every < 0)
@@ -24,7 +26,10 @@ class InferenceCore:
         self.last_mem_ti = 0
         if not self.deep_update_sync:
             self.last_deep_update_ti = -self.deep_update_every
-        self.memory = MemoryManager(config=self.config)
+        if self.ivfpq:
+            self.memory = IVFPQManager(config=self.config)
+        else:
+            self.memory = MemoryManager(config=self.config)
 
     def update_config(self, config):
         self.mem_every = config['mem_every']
@@ -46,9 +51,6 @@ class InferenceCore:
         image, self.pad = pad_divide_by(image, 16)
         image = image.unsqueeze(0) # add the batch dimension
 
-        if print_mem:
-            print("Beginning mem:", torch.cuda.memory_allocated(0))
-
         is_mem_frame = ((self.curr_ti-self.last_mem_ti >= self.mem_every) or (mask is not None)) and (not end)
         need_segment = (self.curr_ti > 0) and ((valid_labels is None) or (len(self.all_labels) != len(valid_labels)))
         is_deep_update = (
@@ -62,22 +64,13 @@ class InferenceCore:
                                                     need_sk=is_mem_frame)
         multi_scale_features = (f16, f8, f4)
 
-        if print_mem:
-            print("Key encoding:", torch.cuda.memory_allocated(0))
-
         # segment the current frame is needed
         if need_segment:
             memory_readout = self.memory.match_memory(key, selection).unsqueeze(0)
 
-            if print_mem:
-                print("Memory matching:", torch.cuda.memory_allocated(0))
-
             hidden, _, pred_prob_with_bg = self.network.segment(multi_scale_features, memory_readout, 
                                     self.memory.get_hidden(), h_out=is_normal_update, strip_bg=False)
             
-            if print_mem:
-                print("Segment:", torch.cuda.memory_allocated(0))
-
             # remove batch dim
             pred_prob_with_bg = pred_prob_with_bg[0]
             pred_prob_no_bg = pred_prob_with_bg[1:]
@@ -112,16 +105,9 @@ class InferenceCore:
         if is_mem_frame:
             value, hidden = self.network.encode_value(image, f16, self.memory.get_hidden(), 
                                     pred_prob_with_bg[1:].unsqueeze(0), is_deep_update=is_deep_update)
-            
-            if print_mem:
-                print("Value encoding:", torch.cuda.memory_allocated(0))
 
             self.memory.add_memory(key, shrinkage, value, self.all_labels, 
                                     selection=selection if self.enable_long_term else None)
-            self.last_mem_ti = self.curr_ti
-
-            if print_mem:
-                print("Adding memory:", torch.cuda.memory_allocated(0))
 
             if is_deep_update:
                 self.memory.set_hidden(hidden)
