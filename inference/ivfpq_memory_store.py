@@ -54,7 +54,8 @@ class IVFPQMemoryStore:
         formatted_query = query[0].transpose(0, 1).contiguous().float()
 
         # returns a tuple of topk L2 similarity values and their indices
-        return self.index.search(formatted_query, k).unsqueeze(0)
+        D, I = self.index.search(formatted_query, k)
+        return D.unsqueeze(0), I.unsqueeze(0)
 
     def get_v_size(self, ni: int):
         return self.v[ni].shape[2]
