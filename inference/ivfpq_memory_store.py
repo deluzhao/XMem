@@ -23,7 +23,9 @@ class IVFPQMemoryStore:
         # keys are stored in a single tensor and are shared between groups/objects
         # values are stored as a list indexed by object groups
         self.quantizer = faiss.IndexFlatL2(d_vector)
-        self.index = faiss.IndexIVFPQ(self.quantizer, d_vector, n_clusters, n_centroid_ids, 8)
+        cpu_index = faiss.IndexIVFPQ(self.quantizer, d_vector, n_clusters, n_centroid_ids, 8)
+        res = faiss.StandardGpuResources()
+        self.index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
         self.obj_groups = []
         # for debugging only
         self.all_objects = []
