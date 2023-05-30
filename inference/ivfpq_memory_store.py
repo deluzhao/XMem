@@ -41,10 +41,10 @@ class IVFPQMemoryStore:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
             self.s = shrinkage
             self.e = selection
-            self.v = value
+            self.v = torch.cat([v for v in value], -1)
         else:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
-            self.v = torch.cat([self.v, value], -1)
+            self.v = torch.cat([self.v] + [v for v in value], -1)
             if shrinkage is not None:
                 self.s = torch.cat([self.s, shrinkage], -1)
             if selection is not None:
@@ -55,7 +55,7 @@ class IVFPQMemoryStore:
 
         # returns a tuple of topk L2 similarity values and their indices
         D, I = self.index.search(formatted_query, k)
-        return D.unsqueeze(0), I.unsqueeze(0)
+        return D.transpose(0, 1).unsqueeze(0), I.transpose(0, 1).unsqueeze(0)
 
     def get_v_size(self, ni: int):
         return self.v[ni].shape[2]

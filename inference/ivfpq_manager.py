@@ -47,10 +47,12 @@ class IVFPQManager:
         """
         D, I = self.mem.topk(query_key, self.top_k)
 
-        x_exp = D.exp_()
+        x_exp = D.nan_to_num().exp_()
         x_exp /= torch.sum(x_exp, dim=1, keepdim=True)
 
-        affinity = torch.zeros(b, self.mem.v.shape[-1], h * w).scatter_(1, I, x_exp) # B*N*HW
+        torch.nn.functional.relu(I, inplace=True) # purely to remove -1s, needs solution
+
+        affinity = torch.zeros(b, self.mem.v.shape[-1], h * w, device='cuda:0').scatter_(1, I, x_exp) # B*N*HW
         
 
         # Shared affinity within each group
