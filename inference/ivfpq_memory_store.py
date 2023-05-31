@@ -41,10 +41,12 @@ class IVFPQMemoryStore:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
             self.s = shrinkage
             self.e = selection
-            self.v = torch.cat([v for v in value], -1)
+            # self.v = torch.cat([v for v in value], -1)
+            self.v = value
         else:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
-            self.v = torch.cat([self.v] + [v for v in value], -1)
+            # self.v = torch.cat([self.v] + [v for v in value], -1)
+            self.v = torch.cat([self.v, value], -1)
             if shrinkage is not None:
                 self.s = torch.cat([self.s, shrinkage], -1)
             if selection is not None:

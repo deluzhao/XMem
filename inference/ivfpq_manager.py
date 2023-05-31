@@ -56,10 +56,7 @@ class IVFPQManager:
         
 
         # Shared affinity within each group
-        all_readout_mem = torch.cat([
-            self._readout(affinity[gi], gv)
-            for gi, gv in enumerate(self.mem.v)
-        ], 0)
+        all_readout_mem = self._readout(affinity, self.mem.v)
 
         return all_readout_mem.view(all_readout_mem.shape[0], self.CV, h, w)
 
