@@ -58,6 +58,7 @@ class IVFPQManager:
 
         torch.nn.functional.relu(I, inplace=True) # purely to remove -1s, needs solution
 
+        # relevant_keys = torch.index_add_(x_exp, 0, I, ))
         affinity = torch.zeros(b, self.mem.v[0].shape[-1], h * w, device='cuda:0').scatter_(1, I, x_exp) # B*N*HW
         
         if self.save_first:

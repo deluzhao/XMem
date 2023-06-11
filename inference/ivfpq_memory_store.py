@@ -26,6 +26,7 @@ class IVFPQMemoryStore:
         cpu_index = faiss.IndexIVFPQ(self.quantizer, d_vector, n_clusters, n_centroid_ids, 8)
         res = faiss.StandardGpuResources()
         self.index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+        self.index.nprobe = int(n_clusters / 8)
         self.obj_groups = []
 
         # for debugging only
