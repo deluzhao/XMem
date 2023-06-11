@@ -1,6 +1,6 @@
 import torch
 import warnings
-
+import os
 from inference.ivfpq_memory_store import IVFPQMemoryStore
 from model.memory_util import *
 from inference.kv_memory_store import KeyValueMemoryStore
