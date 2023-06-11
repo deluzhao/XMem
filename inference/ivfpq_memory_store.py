@@ -31,26 +31,57 @@ class IVFPQMemoryStore:
         self.all_objects = []
 
         # shrinkage and selection are also single tensors
-        self.s = self.e = self.v = None
+        self.s = self.e
+        self.v = []
 
-    def add(self, key, value, shrinkage, selection):
+    def add(self, key, value, shrinkage, selection, objects):
 
-        # add data
+        # add keys
         if not self.index.is_trained:
             self.index.train(key[0].transpose(0, 1).contiguous().float())
             self.index.add(key[0].transpose(0, 1).contiguous().float())
             self.s = shrinkage
             self.e = selection
-            # self.v = torch.cat([v for v in value], -1)
-            self.v = value
         else:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
-            # self.v = torch.cat([self.v] + [v for v in value], -1)
-            self.v = torch.cat([self.v, value], -1)
             if shrinkage is not None:
                 self.s = torch.cat([self.s, shrinkage], -1)
             if selection is not None:
                 self.e = torch.cat([self.e, selection], -1)
+
+        # add values
+        if objects is not None:
+            # When objects is given, v is a tensor; used in working memory
+            assert isinstance(value, torch.Tensor)
+            # First consume objects that are already in the memory bank
+            # cannot use set here because we need to preserve order
+            # shift by one as background is not part of value
+            remaining_objects = [obj-1 for obj in objects]
+            for gi, group in enumerate(self.obj_groups):
+                for obj in group:
+                    # should properly raise an error if there are overlaps in obj_groups
+                    remaining_objects.remove(obj)
+                self.v[gi] = torch.cat([self.v[gi], value[group]], -1)
+
+            # If there are remaining objects, add them as a new group
+            if len(remaining_objects) > 0:
+                new_group = list(remaining_objects)
+                self.v.append(value[new_group])
+                self.obj_groups.append(new_group)
+                self.all_objects.extend(new_group)
+        else:
+            # When objects is not given, v is a list that already has the object groups sorted
+            # used in long-term memory
+            assert isinstance(value, list)
+            for gi, gv in enumerate(value):
+                if gv is None:
+                    continue
+                if gi < self.num_groups:
+                    self.v[gi] = torch.cat([self.v[gi], gv], -1)
+                else:
+                    self.v.append(gv)
+
+        
     
     def topk(self, query, k=30):
         formatted_query = query[0].transpose(0, 1).contiguous().float()

@@ -3,6 +3,7 @@ import warnings
 
 from inference.ivfpq_memory_store import IVFPQMemoryStore
 from model.memory_util import *
+from inference.kv_memory_store import KeyValueMemoryStore
 
 
 class IVFPQManager:
@@ -22,6 +23,7 @@ class IVFPQManager:
         self.hidden = None
 
         self.mem = IVFPQMemoryStore(64, 8, 128, 32)
+        self.kvmem = KeyValueMemoryStore(count_usage=True)
 
         self.reset_config = True
 
@@ -81,7 +83,7 @@ class IVFPQManager:
         if selection is not None:
             selection = selection.flatten(start_dim=2)
 
-        self.mem.add(key, value, shrinkage, selection)
+        self.mem.add(key, value, shrinkage, selection, objects)
 
 
     def create_hidden_state(self, n, sample_key):
