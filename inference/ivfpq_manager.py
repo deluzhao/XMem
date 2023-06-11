@@ -24,6 +24,11 @@ class IVFPQManager:
 
         self.mem = IVFPQMemoryStore(64, 8, 128, 32)
 
+        # debug
+        download_path = "./output/singletest/tensors"
+        os.makedirs(download_path, exist_ok=True)
+        self.save_first = True
+
         self.reset_config = True
 
     def update_config(self, config):
@@ -53,8 +58,15 @@ class IVFPQManager:
 
         torch.nn.functional.relu(I, inplace=True) # purely to remove -1s, needs solution
 
-        affinity = torch.zeros(b, self.mem.v.shape[-1], h * w, device='cuda:0').scatter_(1, I, x_exp) # B*N*HW
+        affinity = torch.zeros(b, self.mem.v[0].shape[-1], h * w, device='cuda:0').scatter_(1, I, x_exp) # B*N*HW
         
+        if self.save_first:
+            torch.save(query_key, "./output/singletest/tensors/qk.pt")
+            torch.save(D, "./output/singletest/tensors/d.pt")
+            torch.save(I, "./output/singletest/tensors/i.pt")
+            torch.save(self.mem.v, "./output/singletest/tensors/v.pt")
+            torch.save(self.mem.k, "./output/singletest/tensors/k.pt")
+            self.save_first = False
 
         # Shared affinity within each group
         all_readout_mem = torch.cat([
