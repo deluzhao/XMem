@@ -27,11 +27,13 @@ class IVFPQMemoryStore:
         res = faiss.StandardGpuResources()
         self.index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
         self.obj_groups = []
+
         # for debugging only
         self.all_objects = []
+        self.k = None
 
         # shrinkage and selection are also single tensors
-        self.s = self.e
+        self.s = self.e = None
         self.v = []
 
     def add(self, key, value, shrinkage, selection, objects):
@@ -40,10 +42,12 @@ class IVFPQMemoryStore:
         if not self.index.is_trained:
             self.index.train(key[0].transpose(0, 1).contiguous().float())
             self.index.add(key[0].transpose(0, 1).contiguous().float())
+            self.k = key
             self.s = shrinkage
             self.e = selection
         else:
             self.index.add(key[0].transpose(0, 1).contiguous().float())
+            self.k = torch.cat([self.k, key], -1)
             if shrinkage is not None:
                 self.s = torch.cat([self.s, shrinkage], -1)
             if selection is not None:

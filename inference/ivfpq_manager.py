@@ -23,7 +23,6 @@ class IVFPQManager:
         self.hidden = None
 
         self.mem = IVFPQMemoryStore(64, 8, 128, 32)
-        self.kvmem = KeyValueMemoryStore(count_usage=True)
 
         self.reset_config = True
 
@@ -58,7 +57,10 @@ class IVFPQManager:
         
 
         # Shared affinity within each group
-        all_readout_mem = self._readout(affinity, self.mem.v)
+        all_readout_mem = torch.cat([
+            self._readout(affinity[gi], gv)
+            for gi, gv in enumerate(self.mem.v)
+        ], 0)
 
         return all_readout_mem.view(all_readout_mem.shape[0], self.CV, h, w)
 
