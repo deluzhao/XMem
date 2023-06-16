@@ -39,11 +39,11 @@ def get_similarity(mk, ms, qk, qe, frame=0):
     else:
         similarity = similarity / math.sqrt(CK)   # B*N*HW
 
-    if frame < 75:
-        download_path = "./output/singletest/tensors"
-        os.makedirs(download_path, exist_ok=True)
-        d = {'mk': mk, 'ms': ms, 'qk': qk, 'qe': qe, 'sim': similarity}
-        torch.save(d, './output/singletest/tensors/' + str(frame) + '.pt')
+    # if frame < 75:
+    #     download_path = "./output/singletest/tensors"
+    #     os.makedirs(download_path, exist_ok=True)
+    #     d = {'mk': mk, 'ms': ms, 'qk': qk, 'qe': qe, 'sim': similarity}
+    #     torch.save(d, './output/singletest/tensors/' + str(frame) + '.pt')
         
     return similarity
 
