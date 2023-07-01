@@ -5,6 +5,19 @@ from model.aggregate import aggregate
 import torch
 from util.tensor_util import pad_divide_by, unpad
 
+from torchvision import transforms
+from torchvision.transforms import InterpolationMode
+import torch.nn.functional as F
+
+
+
+def resize_mask(mask):
+    # mask transform is applied AFTER mapper, so we need to post-process it in eval.py
+    h, w = mask.shape[-2:]
+    min_hw = min(h, w)
+    return F.interpolate(mask, (int(h/min_hw*480), int(w/min_hw*480)), 
+                mode='nearest')
+
 
 class InferenceCore:
     def __init__(self, network:XMem, config):
@@ -20,6 +33,8 @@ class InferenceCore:
 
         self.clear_memory()
         self.all_labels = None
+
+        self.im_resize = transforms.Resize(480, interpolation=InterpolationMode.BILINEAR)
 
     def clear_memory(self):
         self.curr_ti = -1
@@ -44,14 +59,16 @@ class InferenceCore:
         # self.all_labels = [l.item() for l in all_labels]
         self.all_labels = all_labels
 
-    def step(self, image, mask=None, valid_labels=None, end=False, print_mem=False):
+    def step(self, orig_image, orig_mask=None, valid_labels=None, end=False, print_mem=False):
         # image: 3*H*W
         # mask: num_objects*H*W or None
         self.curr_ti += 1
         image, self.pad = pad_divide_by(image, 16)
+
+        image = self.im_resize(orig_image)
         image = image.unsqueeze(0) # add the batch dimension
 
-        is_mem_frame = ((self.curr_ti-self.last_mem_ti >= self.mem_every) or (mask is not None)) and (not end)
+        is_mem_frame = ((self.curr_ti-self.last_mem_ti >= self.mem_every) or (orig_mask is not None)) and (not end)
         need_segment = (self.curr_ti > 0) and ((valid_labels is None) or (len(self.all_labels) != len(valid_labels)))
         is_deep_update = (
             (self.deep_update_sync and is_mem_frame) or  # synchronized
@@ -67,8 +84,7 @@ class InferenceCore:
         # segment the current frame is needed
         if need_segment:
             memory_readout = self.memory.match_memory(key, selection).unsqueeze(0)
-
-            hidden, _, pred_prob_with_bg = self.network.segment(multi_scale_features, memory_readout, 
+            hidden, _, pred_prob_with_bg = self.network.segment(orig_image, multi_scale_features, memory_readout, 
                                     self.memory.get_hidden(), h_out=is_normal_update, strip_bg=False)
             
             # remove batch dim
@@ -82,7 +98,8 @@ class InferenceCore:
             pred_prob_no_bg = pred_prob_with_bg = None
 
         # use the input mask if any
-        if mask is not None:
+        if orig_mask is not None:
+            mask = resize_mask(orig_mask.unsqueeze(0))[0]
             mask, _ = pad_divide_by(mask, 16)
 
             if pred_prob_no_bg is not None:

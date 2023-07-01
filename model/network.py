@@ -104,7 +104,7 @@ class XMem(nn.Module):
 
         return memory
 
-    def segment(self, multi_scale_features, memory_readout,
+    def segment(self, image, multi_scale_features, memory_readout,
                     hidden_state, selector=None, h_out=True, strip_bg=True): 
 
         hidden_state, logits = self.decoder(*multi_scale_features, hidden_state, memory_readout, h_out=h_out)
