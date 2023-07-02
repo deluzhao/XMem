@@ -19,6 +19,17 @@ from model import resnet
 from model.cbam import CBAM
 
 
+def grid_sample(input, x_shape, y_shape):
+    x = torch.linspace(-1, 1, x_shape).view(-1, 1).repeat(1, x_shape)
+    y = torch.linspace(-1, 1, y_shape).repeat(y_shape, 1)
+    grid = torch.cat((x.unsqueeze(2), y.unsqueeze(2)), 2)
+    grid.unsqueeze_(0)
+
+    upsampled = F.grid_sample(input, grid)
+
+    return upsampled
+
+
 class FeatureFusionBlock(nn.Module):
     def __init__(self, x_in_dim, g_in_dim, g_mid_dim, g_out_dim):
         super().__init__()
@@ -212,22 +223,34 @@ class KeyProjection(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, val_dim, hidden_dim):
+    def __init__(self, val_dim, hidden_dim, rescaled=False):
         super().__init__()
+
+        self.rescaled = rescaled
 
         self.fuser = FeatureFusionBlock(1024, val_dim+hidden_dim, 512, 512)
         if hidden_dim > 0:
             self.hidden_update = HiddenUpdater([512, 256, 256+1], 256, hidden_dim)
         else:
             self.hidden_update = None
+
+        self.encoder = KeyEncoder()
         
         self.up_16_8 = UpsampleBlock(512, 512, 256) # 1/16 -> 1/8
         self.up_8_4 = UpsampleBlock(256, 256, 256) # 1/8 -> 1/4
 
-        self.pred = nn.Conv2d(256, 1, kernel_size=3, padding=1, stride=1)
 
-    def forward(self, f16, f8, f4, hidden_state, memory_readout, h_out=True):
+        self.rescaled = rescaled
+        self.full_res_fuser = FeatureFusionBlock(256, 256, 256, 256)
+
+        self.pred = nn.Conv2d(256, 1, kernel_size=3, padding=1, stride=1) # kernel 1
+
+        
+
+    def forward(self, image, f16, f8, f4, hidden_state, memory_readout, h_out=True):
         batch_size, num_objects = memory_readout.shape[:2]
+
+        full_res_f16, full_res_f8, full_res_f4 = self.encoder(image)
 
         if self.hidden_update is not None:
             g16 = self.fuser(f16, torch.cat([memory_readout, hidden_state], 2))
@@ -236,15 +259,27 @@ class Decoder(nn.Module):
 
         g8 = self.up_16_8(f8, g16)
         g4 = self.up_8_4(f4, g8)
-        logits = self.pred(F.relu(g4.flatten(start_dim=0, end_dim=1)))
+
+        x_shape = full_res_f4.shape[-2]
+        y_shape = full_res_f4.shape[-1]
+        full_res_g4 = grid_sample(g4, x_shape, y_shape)
+
+        full_res_g4 = self.full_res_fuser(full_res_f4, full_res_g4)
+
+        full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1)))
+
+        logits = F.interpolate(full_res_logits, size=(full_res_logits.shape[0], g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
 
         if h_out and self.hidden_update is not None:
             g4 = torch.cat([g4, logits.view(batch_size, num_objects, 1, *logits.shape[-2:])], 2)
             hidden_state = self.hidden_update([g16, g8, g4], hidden_state)
         else:
             hidden_state = None
-        
-        logits = F.interpolate(logits, scale_factor=4, mode='bilinear', align_corners=False)
-        logits = logits.view(batch_size, num_objects, *logits.shape[-2:])
 
-        return hidden_state, logits
+        
+        full_res_logits = F.interpolate(full_res_logits, scale_factor=4, mode='bilinear', align_corners=False)
+
+        
+        full_res_logits = full_res_logits.view(batch_size, num_objects, *full_res_logits.shape[-2:])
+
+        return hidden_state, full_res_logits

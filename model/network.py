@@ -32,7 +32,7 @@ class XMem(nn.Module):
         # Projection from f16 feature space to key/value space
         self.key_proj = KeyProjection(1024, self.key_dim)
 
-        self.decoder = Decoder(self.value_dim, self.hidden_dim)
+        self.decoder = Decoder(self.value_dim, self.hidden_dim, self.single_object)
 
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)
@@ -107,7 +107,7 @@ class XMem(nn.Module):
     def segment(self, image, multi_scale_features, memory_readout,
                     hidden_state, selector=None, h_out=True, strip_bg=True): 
 
-        hidden_state, logits = self.decoder(*multi_scale_features, hidden_state, memory_readout, h_out=h_out)
+        hidden_state, logits = self.decoder(image, *multi_scale_features, hidden_state, memory_readout, h_out=h_out)
         prob = torch.sigmoid(logits)
         if selector is not None:
             prob = prob * selector

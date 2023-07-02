@@ -66,6 +66,7 @@ class InferenceCore:
         image, self.pad = pad_divide_by(image, 16)
 
         image = self.im_resize(orig_image)
+        orig_image = orig_image.unsqueeze(0)
         image = image.unsqueeze(0) # add the batch dimension
 
         is_mem_frame = ((self.curr_ti-self.last_mem_ti >= self.mem_every) or (orig_mask is not None)) and (not end)
@@ -120,6 +121,9 @@ class InferenceCore:
 
         # save as memory if needed
         if is_mem_frame:
+            # key, shrinkage, selection, f16, f8, f4 = self.network.encode_key(orig_image, 
+            #                                         need_ek=(self.enable_long_term or need_segment), 
+            #                                         need_sk=is_mem_frame)
             value, hidden = self.network.encode_value(image, f16, self.memory.get_hidden(), 
                                     pred_prob_with_bg[1:].unsqueeze(0), is_deep_update=is_deep_update)
 
