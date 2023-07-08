@@ -20,19 +20,33 @@ from model.cbam import CBAM
 
 
 def grid_sample(input, x_shape, y_shape):
-    dx = torch.linspace(-1, 1, x_shape)
-    dy = torch.linspace(-1, 1, y_shape)
-    meshx, meshy = torch.meshgrid((dx, dy))
-    grid = torch.stack((meshy, meshx), 2).unsqueeze(0).to(device='cuda:0')
-
     add_dim = False
     if len(input.shape) == 3:
         add_dim = True
         input = input.unsqueeze(0)
+
+    rem_dim = False
+    if len(input.shape) == 5:
+        rem_dim = True
+        input = input.squeeze(0)
+    dx = torch.linspace(-1, 1, x_shape)
+    dy = torch.linspace(-1, 1, y_shape)
+    meshx, meshy = torch.meshgrid((dx, dy))
+    if rem_dim:
+        grid = torch.stack((meshy, meshx), 2)
+        grid = torch.cat([grid.unsqueeze(0) for _ in range(input.shape[0])], dim=0).to(device='cuda:0').half()
+    else:
+        grid = torch.stack((meshy, meshx), 2).unsqueeze(0).to(device='cuda:0')
+
+
     output = torch.nn.functional.grid_sample(input, grid)
 
     if add_dim:
         output = output.squeeze(0)
+
+    if rem_dim:
+        output = output.unsqueeze(0)
+
     return output
 
 
@@ -275,7 +289,7 @@ class Decoder(nn.Module):
 
         full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1)))
 
-        logits = F.interpolate(full_res_logits, size=(full_res_logits.shape[0], g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
+        logits = F.interpolate(full_res_logits, size=(g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
 
         if h_out and self.hidden_update is not None:
             g4 = torch.cat([g4, logits.view(batch_size, num_objects, 1, *logits.shape[-2:])], 2)
