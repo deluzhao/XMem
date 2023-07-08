@@ -63,9 +63,10 @@ class InferenceCore:
         # image: 3*H*W
         # mask: num_objects*H*W or None
         self.curr_ti += 1
-        image, self.pad = pad_divide_by(image, 16)
 
         image = self.im_resize(orig_image)
+
+        image, self.pad = pad_divide_by(image, 16)
         orig_image = orig_image.unsqueeze(0)
         image = image.unsqueeze(0) # add the batch dimension
 
