@@ -20,14 +20,21 @@ from model.cbam import CBAM
 
 
 def grid_sample(input, x_shape, y_shape):
-    x = torch.linspace(-1, 1, x_shape).view(-1, 1).repeat(1, x_shape)
-    y = torch.linspace(-1, 1, y_shape).repeat(y_shape, 1)
-    grid = torch.cat((x.unsqueeze(2), y.unsqueeze(2)), 2)
-    grid.unsqueeze_(0)
+    dx = torch.linspace(-1, 1, x_shape)
+    dy = torch.linspace(-1, 1, y_shape)
+    meshx, meshy = torch.meshgrid((dx, dy))
+    grid = torch.stack((meshy, meshx), 2).unsqueeze(0).to(device='cuda:0')
 
-    upsampled = F.grid_sample(input, grid)
+    add_dim = False
+    if len(input.shape) == 3:
+        add_dim = True
+        input = input.unsqueeze(0)
+    output = torch.nn.functional.grid_sample(input.unsqueeze(0), grid)
 
-    return upsampled
+    if add_dim:
+        output = output.squeeze(0)
+    return output
+
 
 
 class FeatureFusionBlock(nn.Module):
