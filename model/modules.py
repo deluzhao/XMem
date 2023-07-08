@@ -29,7 +29,7 @@ def grid_sample(input, x_shape, y_shape):
     if len(input.shape) == 3:
         add_dim = True
         input = input.unsqueeze(0)
-    output = torch.nn.functional.grid_sample(input.unsqueeze(0), grid)
+    output = torch.nn.functional.grid_sample(input, grid)
 
     if add_dim:
         output = output.squeeze(0)
