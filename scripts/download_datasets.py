@@ -91,55 +91,75 @@ if not os.path.exists('../DAVIS'):
 YouTubeVOS dataset
 """
 try:
-    if not os.path.exists('../YouTube'):
-        os.makedirs('../YouTube', exist_ok=True)
-        os.makedirs('../YouTube/all_frames', exist_ok=True)
+    # if not os.path.exists('../YouTube'):
+    #     os.makedirs('../YouTube', exist_ok=True)
+    #     os.makedirs('../YouTube/all_frames', exist_ok=True)
 
-        print('Downloading YouTubeVOS train...')
-        gdown.download('https://drive.google.com/uc?id=13Eqw0gVK-AO5B-cqvJ203mZ2vzWck9s4', output='../YouTube/train.zip', quiet=False)
-        print('Downloading YouTubeVOS val...')
-        gdown.download('https://drive.google.com/uc?id=1o586Wjya-f2ohxYf9C1RlRH-gkrzGS8t', output='../YouTube/valid.zip', quiet=False)
-        print('Downloading YouTubeVOS all frames valid...')
-        gdown.download('https://drive.google.com/uc?id=1rWQzZcMskgpEQOZdJPJ7eTmLCBEIIpEN', output='../YouTube/all_frames/valid.zip', quiet=False)
+    #     print('Downloading YouTubeVOS train...')
+    #     gdown.download('https://drive.google.com/uc?id=13Eqw0gVK-AO5B-cqvJ203mZ2vzWck9s4', output='../YouTube/train.zip', quiet=False)
+    #     print('Downloading YouTubeVOS val...')
+    #     gdown.download('https://drive.google.com/uc?id=1o586Wjya-f2ohxYf9C1RlRH-gkrzGS8t', output='../YouTube/valid.zip', quiet=False)
+    #     print('Downloading YouTubeVOS all frames valid...')
+    #     gdown.download('https://drive.google.com/uc?id=1rWQzZcMskgpEQOZdJPJ7eTmLCBEIIpEN', output='../YouTube/all_frames/valid.zip', quiet=False)
 
-        print('Extracting YouTube datasets...')
-        with zipfile.ZipFile('../YouTube/train.zip', 'r') as zip_file:
-            zip_file.extractall('../YouTube/')
-        with zipfile.ZipFile('../YouTube/valid.zip', 'r') as zip_file:
-            zip_file.extractall('../YouTube/')
-        with zipfile.ZipFile('../YouTube/all_frames/valid.zip', 'r') as zip_file:
-            zip_file.extractall('../YouTube/all_frames')
+    #     print('Extracting YouTube datasets...')
+    #     with zipfile.ZipFile('../YouTube/train.zip', 'r') as zip_file:
+    #         zip_file.extractall('../YouTube/')
+    #     with zipfile.ZipFile('../YouTube/valid.zip', 'r') as zip_file:
+    #         zip_file.extractall('../YouTube/')
+    #     with zipfile.ZipFile('../YouTube/all_frames/valid.zip', 'r') as zip_file:
+    #         zip_file.extractall('../YouTube/all_frames')
 
-        print('Cleaning up YouTubeVOS datasets...')
-        os.remove('../YouTube/train.zip')
-        os.remove('../YouTube/valid.zip')
-        os.remove('../YouTube/all_frames/valid.zip')
+    #     print('Cleaning up YouTubeVOS datasets...')
+    #     os.remove('../YouTube/train.zip')
+    #     os.remove('../YouTube/valid.zip')
+    #     os.remove('../YouTube/all_frames/valid.zip')
 
-        print('Resizing YouTubeVOS to 480p...')
-        resize_youtube.resize_all('../YouTube/train', '../YouTube/train_480p')
+    #     print('Resizing YouTubeVOS to 480p...')
+    #     resize_youtube.resize_all('../YouTube/train', '../YouTube/train_480p')
+
+    if not os.path.exists('../YouTube2018'):
+        # YouTubeVOS 2018
+        os.makedirs('../YouTube2018', exist_ok=True)
+        os.makedirs('../YouTube2018/all_frames', exist_ok=True)
+
+        print('Downloading YouTubeVOS2018 val...')
+        gdown.download('https://drive.google.com/uc?id=1-QrceIl5sUNTKz7Iq0UsWC6NLZq7girr', output='../YouTube2018/valid.zip', quiet=False)
+        print('Downloading YouTubeVOS2018 all frames valid...')
+        gdown.download('https://drive.google.com/uc?id=1yVoHM6zgdcL348cFpolFcEl4IC1gorbV', output='../YouTube2018/all_frames/valid.zip', quiet=False)
+
+        print('Extracting YouTube2018 datasets...')
+        with zipfile.ZipFile('../YouTube2018/valid.zip', 'r') as zip_file:
+            zip_file.extractall('../YouTube2018/')
+        with zipfile.ZipFile('../YouTube2018/all_frames/valid.zip', 'r') as zip_file:
+            zip_file.extractall('../YouTube2018/all_frames')
+
+        print('Cleaning up YouTubeVOS2018 datasets...')
+        os.remove('../YouTube2018/valid.zip')
+        os.remove('../YouTube2018/all_frames/valid.zip')
 except:
     pass
 
-if not os.path.exists('../YouTube2018'):
-    # YouTubeVOS 2018
-    os.makedirs('../YouTube2018', exist_ok=True)
-    os.makedirs('../YouTube2018/all_frames', exist_ok=True)
+# YouTubeVOS 2023
+os.makedirs('../YouTube', exist_ok=True)
 
-    print('Downloading YouTubeVOS2018 val...')
-    gdown.download('https://drive.google.com/uc?id=1-QrceIl5sUNTKz7Iq0UsWC6NLZq7girr', output='../YouTube2018/valid.zip', quiet=False)
-    print('Downloading YouTubeVOS2018 all frames valid...')
-    gdown.download('https://drive.google.com/uc?id=1yVoHM6zgdcL348cFpolFcEl4IC1gorbV', output='../YouTube2018/all_frames/valid.zip', quiet=False)
+print('Downloading YouTubeVOS train...')
+gdown.download('https://drive.google.com/uc?id=1qhhlaER3Qvu7QYhIkj8PE7M-cpV34TqZ', output='../YouTube/train.zip', quiet=False)
+print('Downloading YouTubeVOS val...')
+gdown.download('https://drive.google.com/uc?id=15Hkk2lg4nsxiNThZ5sX5FZlZN0TbTo07', output='../YouTube/valid.zip', quiet=False)
 
-    print('Extracting YouTube2018 datasets...')
-    with zipfile.ZipFile('../YouTube2018/valid.zip', 'r') as zip_file:
-        zip_file.extractall('../YouTube2018/')
-    with zipfile.ZipFile('../YouTube2018/all_frames/valid.zip', 'r') as zip_file:
-        zip_file.extractall('../YouTube2018/all_frames')
+print('Extracting YouTube datasets...')
+with zipfile.ZipFile('../YouTube/train.zip', 'r') as zip_file:
+    zip_file.extractall('../YouTube/')
+with zipfile.ZipFile('../YouTube/valid.zip', 'r') as zip_file:
+    zip_file.extractall('../YouTube/')
 
-    print('Cleaning up YouTubeVOS2018 datasets...')
-    os.remove('../YouTube2018/valid.zip')
-    os.remove('../YouTube2018/all_frames/valid.zip')
+print('Cleaning up YouTubeVOS datasets...')
+os.remove('../YouTube/train.zip')
+os.remove('../YouTube/valid.zip')
 
+print('Resizing YouTubeVOS to 480p...')
+resize_youtube.resize_all('../YouTube/train', '../YouTube/train_480p')
 
 """
 Long-Time Video dataset
