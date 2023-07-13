@@ -36,7 +36,7 @@ def grid_sample(input, x_shape, y_shape):
         grid = torch.stack((meshy, meshx), 2)
         grid = torch.cat([grid.unsqueeze(0) for _ in range(input.shape[0])], dim=0).to(device='cuda:0').half()
     else:
-        grid = torch.stack((meshy, meshx), 2).unsqueeze(0).to(device='cuda:0')
+        grid = torch.stack((meshy, meshx), 2).unsqueeze(0).to(device='cuda:0').half()
 
 
     output = torch.nn.functional.grid_sample(input, grid)
@@ -285,9 +285,12 @@ class Decoder(nn.Module):
         y_shape = full_res_f4.shape[-1]
         full_res_g4 = grid_sample(g4, x_shape, y_shape)
 
+
+        
+
         full_res_g4 = self.full_res_fuser(full_res_f4, full_res_g4)
 
-        full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1)))
+        full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1))) # move this one up with low-res g4
 
         logits = F.interpolate(full_res_logits, size=(g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
 

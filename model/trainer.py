@@ -25,8 +25,13 @@ class XMemTrainer:
         self.deep_update_prob = config['deep_update_prob']
         self.local_rank = local_rank
 
+        model = XMem(config).cuda()
+
+        # for param in [model.key_encoder, model.value_encoder, model.key_proj]:
+        #     param.requires_grad = False
+
         self.XMem = nn.parallel.DistributedDataParallel(
-            XMem(config).cuda(), 
+            model, 
             device_ids=[local_rank], output_device=local_rank, broadcast_buffers=False)
 
         # Set up logger when local_rank=0
@@ -39,6 +44,7 @@ class XMemTrainer:
         self.loss_computer = LossComputer(config)
 
         self.train()
+
         self.optimizer = optim.AdamW(filter(
             lambda p: p.requires_grad, self.XMem.parameters()), lr=config['lr'], weight_decay=config['weight_decay'])
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, config['steps'], config['gamma'])

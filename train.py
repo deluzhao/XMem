@@ -90,7 +90,7 @@ for si, stage in enumerate(stages_to_perform):
         # Construct model for other ranks
         model = XMemTrainer(config, local_rank=local_rank, world_size=world_size).train()
 
-    # Load pertrained model if needed
+    # Load pretrained model if needed
     if raw_config['load_checkpoint'] is not None:
         total_iter = model.load_checkpoint(raw_config['load_checkpoint'])
         raw_config['load_checkpoint'] = None

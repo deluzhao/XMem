@@ -183,6 +183,8 @@ class XMem(nn.Module):
 
     def load_weights(self, src_dict, init_as_zero_if_needed=False):
         # Maps SO weight (without other_mask) to MO weight (with other_mask)
+
+        # set weighting here
         for k in list(src_dict.keys()):
             if k == 'value_encoder.conv1.weight':
                 if src_dict[k].shape[1] == 4:
@@ -195,4 +197,4 @@ class XMem(nn.Module):
                         print('Zero-initialized padding.')
                     src_dict[k] = torch.cat([src_dict[k], pads], 1)
 
-        self.load_state_dict(src_dict)
+        self.load_state_dict(src_dict, strict=False)
