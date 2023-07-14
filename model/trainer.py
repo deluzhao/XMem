@@ -10,12 +10,19 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 from model.network import XMem
 from model.losses import LossComputer
 from util.log_integrator import Integrator
 from util.image_saver import pool_pairs
 
+def resize_mask(mask):
+    # mask transform is applied AFTER mapper, so we need to post-process it in eval.py
+    h, w = mask.shape[-2:]
+    min_hw = min(h, w)
+    return F.interpolate(mask, (int(h/min_hw*480), int(w/min_hw*480)), 
+                mode='nearest')
 
 class XMemTrainer:
     def __init__(self, config, logger=None, save_path=None, local_rank=0, world_size=1):
@@ -115,7 +122,7 @@ class XMemTrainer:
                 # No need to encode the last frame
                 if ti < (self.num_frames-1):
                     is_deep_update = np.random.rand() < self.deep_update_prob
-                    v16, hidden = self.XMem('encode_value', frames[:,ti], f16[:,ti], hidden, masks, is_deep_update=is_deep_update)
+                    v16, hidden = self.XMem('encode_value', frames[:,ti], f16[:,ti], hidden, resize_mask(masks), is_deep_update=is_deep_update)
                     values = torch.cat([values, v16.unsqueeze(3)], 3)
 
                 out[f'masks_{ti}'] = masks
