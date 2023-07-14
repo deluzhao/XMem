@@ -110,7 +110,7 @@ class XMemTrainer:
                 memory_readout = self.XMem('read_memory', key[:,:,ti], selection[:,:,ti] if selection is not None else None, 
                                         ref_keys, ref_shrinkage, ref_values)
                 hidden, logits, masks = self.XMem('segment', (f16[:,ti], f8[:,ti], f4[:,ti]), memory_readout, 
-                        hidden, selector, h_out=(ti < (self.num_frames-1)))
+                        hidden, selector, image=frames[:,ti], h_out=(ti < (self.num_frames-1)))
 
                 # No need to encode the last frame
                 if ti < (self.num_frames-1):

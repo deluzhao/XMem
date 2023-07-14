@@ -86,8 +86,8 @@ class InferenceCore:
         # segment the current frame is needed
         if need_segment:
             memory_readout = self.memory.match_memory(key, selection).unsqueeze(0)
-            hidden, _, pred_prob_with_bg = self.network.segment(orig_image, multi_scale_features, memory_readout, 
-                                    self.memory.get_hidden(), h_out=is_normal_update, strip_bg=False)
+            hidden, _, pred_prob_with_bg = self.network.segment(multi_scale_features, memory_readout, 
+                                    self.memory.get_hidden(), image=orig_image, h_out=is_normal_update, strip_bg=False)
             
             # remove batch dim
             pred_prob_with_bg = pred_prob_with_bg[0]

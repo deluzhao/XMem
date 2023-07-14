@@ -104,10 +104,10 @@ class XMem(nn.Module):
 
         return memory
 
-    def segment(self, image, multi_scale_features, memory_readout,
-                    hidden_state, selector=None, h_out=True, strip_bg=True): 
+    def segment(self, multi_scale_features, memory_readout,
+                    hidden_state, image=None, selector=None, h_out=True, strip_bg=True): 
 
-        hidden_state, logits = self.decoder(image, *multi_scale_features, hidden_state, memory_readout, h_out=h_out)
+        hidden_state, logits = self.decoder(*multi_scale_features, hidden_state, memory_readout, image=image, h_out=h_out)
         prob = torch.sigmoid(logits)
         if selector is not None:
             prob = prob * selector
