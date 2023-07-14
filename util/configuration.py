@@ -94,7 +94,7 @@ class Configuration():
         parser.add_argument('--debug', help='Debug mode which logs information more often', action='store_true')
 
         # # Multiprocessing parameters, not set by users
-        # parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
+        parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
 
         if unknown_arg_ok:
             args, _ = parser.parse_known_args()
