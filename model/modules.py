@@ -283,16 +283,14 @@ class Decoder(nn.Module):
 
         x_shape = full_res_f4.shape[-2]
         y_shape = full_res_f4.shape[-1]
-        full_res_g4 = grid_sample(g4, x_shape, y_shape)
-
-
-        
+        # full_res_g4 = grid_sample(g4, x_shape, y_shape)
+        full_res_g4 = F.interpolate(g4, size=(*g4.shape[:-2], x_shape, y_shape), mode='bilinear', align_corners=False)
 
         full_res_g4 = self.full_res_fuser(full_res_f4, full_res_g4)
 
         full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1))) # move this one up with low-res g4
 
-        logits = F.interpolate(full_res_logits, size=(g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
+        logits = F.interpolate(full_res_logits, size=(*full_res_logits.shape[:-2], g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
 
         if h_out and self.hidden_update is not None:
             g4 = torch.cat([g4, logits.view(batch_size, num_objects, 1, *logits.shape[-2:])], 2)
