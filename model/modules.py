@@ -268,7 +268,7 @@ class Decoder(nn.Module):
 
         
 
-    def forward(self, image, f16, f8, f4, hidden_state, memory_readout, h_out=True):
+    def forward(self, f16, f8, f4, hidden_state, memory_readout, image=None, h_out=True):
         batch_size, num_objects = memory_readout.shape[:2]
 
         full_res_f16, full_res_f8, full_res_f4 = self.encoder(image)
