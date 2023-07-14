@@ -126,7 +126,7 @@ class InferenceCore:
             #                                         need_ek=(self.enable_long_term or need_segment), 
             #                                         need_sk=is_mem_frame)
             value, hidden = self.network.encode_value(image, f16, self.memory.get_hidden(), 
-                                    pred_prob_with_bg[1:].unsqueeze(0), is_deep_update=is_deep_update)
+                                    resize_mask(pred_prob_with_bg[1:].unsqueeze(0)), is_deep_update=is_deep_update)
 
             self.memory.add_memory(key, shrinkage, value, self.all_labels, 
                                     selection=selection if self.enable_long_term else None)

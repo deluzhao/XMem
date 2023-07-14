@@ -289,7 +289,7 @@ class Decoder(nn.Module):
 
         full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1))) # move this one up with low-res g4
 
-        logits = F.interpolate(full_res_logits, size=(*full_res_logits.shape[:-2], g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
+        logits = F.interpolate(full_res_logits, size=(g4.shape[-2], g4.shape[-1]), mode='bilinear', align_corners=False)
 
         if h_out and self.hidden_update is not None:
             g4 = torch.cat([g4, logits.view(batch_size, num_objects, 1, *logits.shape[-2:])], 2)
