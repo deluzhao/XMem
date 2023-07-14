@@ -283,8 +283,7 @@ class Decoder(nn.Module):
 
         x_shape = full_res_f4.shape[-2]
         y_shape = full_res_f4.shape[-1]
-        # full_res_g4 = grid_sample(g4, x_shape, y_shape)
-        full_res_g4 = F.interpolate(g4, size=(*g4.shape[:-2], x_shape, y_shape), mode='bilinear', align_corners=False)
+        full_res_g4 = grid_sample(g4, x_shape, y_shape)
 
         full_res_g4 = self.full_res_fuser(full_res_f4, full_res_g4)
 
