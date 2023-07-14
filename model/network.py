@@ -185,16 +185,16 @@ class XMem(nn.Module):
         # Maps SO weight (without other_mask) to MO weight (with other_mask)
 
         # set weighting here
-        for k in list(src_dict.keys()):
-            if k == 'value_encoder.conv1.weight':
-                if src_dict[k].shape[1] == 4:
-                    print('Converting weights from single object to multiple objects.')
-                    pads = torch.zeros((64,1,7,7), device=src_dict[k].device)
-                    if not init_as_zero_if_needed:
-                        print('Randomly initialized padding.')
-                        nn.init.orthogonal_(pads)
-                    else:
-                        print('Zero-initialized padding.')
-                    src_dict[k] = torch.cat([src_dict[k], pads], 1)
+        # for k in list(src_dict.keys()):
+        #     if k == 'value_encoder.conv1.weight':
+        #         if src_dict[k].shape[1] == 4:
+        #             print('Converting weights from single object to multiple objects.')
+        #             pads = torch.zeros((64,1,7,7), device=src_dict[k].device)
+        #             if not init_as_zero_if_needed:
+        #                 print('Randomly initialized padding.')
+        #                 nn.init.orthogonal_(pads)
+        #             else:
+        #                 print('Zero-initialized padding.')
+        #             src_dict[k] = torch.cat([src_dict[k], pads], 1)
 
         self.load_state_dict(src_dict, strict=False)
