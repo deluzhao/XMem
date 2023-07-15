@@ -243,6 +243,26 @@ class KeyProjection(nn.Module):
         return self.key_proj(x), shrinkage, selection
 
 
+class FullResEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        network = resnet.resnet50(pretrained=True)
+        self.conv1 = network.conv1
+        self.bn1 = network.bn1
+        self.relu = network.relu  # 1/2, 64
+        self.maxpool = network.maxpool
+
+        self.res2 = network.layer1 # 1/4, 256
+
+    def forward(self, f):
+        x = self.conv1(f) 
+        x = self.bn1(x)
+        x = self.relu(x)   # 1/2, 64
+        x = self.maxpool(x)  # 1/4, 64
+        f4 = self.res2(x)   # 1/4, 256
+
+        return f4
+
 class Decoder(nn.Module):
     def __init__(self, val_dim, hidden_dim, rescaled=False):
         super().__init__()
@@ -255,7 +275,7 @@ class Decoder(nn.Module):
         else:
             self.hidden_update = None
 
-        self.encoder = KeyEncoder()
+        self.encoder = FullResEncoder()
         
         self.up_16_8 = UpsampleBlock(512, 512, 256) # 1/16 -> 1/8
         self.up_8_4 = UpsampleBlock(256, 256, 256) # 1/8 -> 1/4
@@ -271,7 +291,7 @@ class Decoder(nn.Module):
     def forward(self, f16, f8, f4, hidden_state, memory_readout, image=None, h_out=True):
         batch_size, num_objects = memory_readout.shape[:2]
 
-        full_res_f16, full_res_f8, full_res_f4 = self.encoder(image)
+        full_res_f4 = self.encoder(image)
 
         if self.hidden_update is not None:
             g16 = self.fuser(f16, torch.cat([memory_readout, hidden_state], 2))
