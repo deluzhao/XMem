@@ -90,14 +90,10 @@ class XMemTrainer:
         frames_480p = frames_480p.reshape(B, C, T, 480, 480)
 
         # reshape mask to 480p
-        print(first_frame_gt.shape)
         B, C, T, W, H = first_frame_gt.size() 
         first_frame_gt_480p = first_frame_gt.reshape(B*C, T, W, H).clone()
         first_frame_gt_480p = F.interpolate(first_frame_gt_480p, size=(480, 480), mode='nearest')
         first_frame_gt_480p = first_frame_gt_480p.reshape(B, C, T, 480, 480)
-        print(first_frame_gt_480p.shape)
-
-        assert False
 
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
@@ -105,7 +101,7 @@ class XMemTrainer:
 
             filler_one = torch.zeros(1, dtype=torch.int64)
             hidden = torch.zeros((b, num_objects, self.config['hidden_dim'], *key.shape[-2:]))
-            v16, hidden = self.XMem('encode_value', frames_480p[:,0], f16[:,0], hidden, first_frame_gt[:,0])
+            v16, hidden = self.XMem('encode_value', frames_480p[:,0], f16[:,0], hidden, first_frame_gt_480p[:,0])
             values = v16.unsqueeze(3) # add the time dimension
 
             for ti in range(1, self.num_frames):
@@ -139,7 +135,7 @@ class XMemTrainer:
                 # No need to encode the last frame
                 if ti < (self.num_frames-1):
                     is_deep_update = np.random.rand() < self.deep_update_prob
-                    v16, hidden = self.XMem('encode_value', frames[:,ti], f16[:,ti], hidden, F.interpolate(masks, size=(first_frame_gt.shape[-2], first_frame_gt.shape[-1]), mode='bilinear', align_corners=False), is_deep_update=is_deep_update)
+                    v16, hidden = self.XMem('encode_value', frames_480p[:,ti], f16[:,ti], hidden, F.interpolate(masks, size=(first_frame_gt.shape[-2], first_frame_gt.shape[-1]), mode='bilinear', align_corners=False), is_deep_update=is_deep_update)
                     values = torch.cat([values, v16.unsqueeze(3)], 3)
 
                 out[f'masks_{ti}'] = masks
