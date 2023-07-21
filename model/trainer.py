@@ -93,7 +93,7 @@ class XMemTrainer:
         print(first_frame_gt.shape)
         B, C, T, W, H = first_frame_gt.size() 
         first_frame_gt_480p = first_frame_gt.reshape(B*C, T, W, H).clone()
-        first_frame_gt_480p = F.interpolate(first_frame_gt_480p, size=(480, 480), mode='bilinear', align_corners=False)
+        first_frame_gt_480p = F.interpolate(first_frame_gt_480p, size=(480, 480), mode='nearest')
         first_frame_gt_480p = first_frame_gt_480p.reshape(B, C, T, 480, 480)
         print(first_frame_gt_480p.shape)
 
