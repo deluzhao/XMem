@@ -83,21 +83,29 @@ class XMemTrainer:
         num_objects = first_frame_gt.shape[2]
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
 
+        # reshape frames to 480p
         B, C, T, W, H = frames.size() 
         frames_480p = frames.reshape(B*C, T, W, H).clone()
         frames_480p = F.interpolate(frames_480p, size=(480, 480), mode='bilinear', align_corners=False)
         frames_480p = frames_480p.reshape(B, C, T, 480, 480)
-        print(frames.shape)
-        print(frames_480p.shape)
+
+        # reshape mask to 480p
+        print(first_frame_gt.shape)
+        B, C, T, W, H = first_frame_gt.size() 
+        first_frame_gt_480p = first_frame_gt.reshape(B*C, T, W, H).clone()
+        first_frame_gt_480p = F.interpolate(first_frame_gt_480p, size=(480, 480), mode='bilinear', align_corners=False)
+        first_frame_gt_480p = first_frame_gt_480p.reshape(B, C, T, 480, 480)
+        print(first_frame_gt_480p.shape)
+
         assert False
 
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
-            key, shrinkage, selection, f16, f8, f4 = self.XMem('encode_key', frames)
+            key, shrinkage, selection, f16, f8, f4 = self.XMem('encode_key', frames_480p)
 
             filler_one = torch.zeros(1, dtype=torch.int64)
             hidden = torch.zeros((b, num_objects, self.config['hidden_dim'], *key.shape[-2:]))
-            v16, hidden = self.XMem('encode_value', frames[:,0], f16[:,0], hidden, first_frame_gt[:,0])
+            v16, hidden = self.XMem('encode_value', frames_480p[:,0], f16[:,0], hidden, first_frame_gt[:,0])
             values = v16.unsqueeze(3) # add the time dimension
 
             for ti in range(1, self.num_frames):
