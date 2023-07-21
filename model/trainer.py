@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 
 from model.network import XMem
 from model.losses import LossComputer
@@ -82,9 +83,12 @@ class XMemTrainer:
         num_objects = first_frame_gt.shape[2]
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
 
+        resize_frames = transforms.Compose([transforms.Resize((480,480))])
+        frames_480p = resize_frames(frames)
         print(frames.shape)
+        print(frames_480p.shape)
         assert False
-        
+
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
             key, shrinkage, selection, f16, f8, f4 = self.XMem('encode_key', frames)

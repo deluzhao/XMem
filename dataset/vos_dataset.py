@@ -80,12 +80,12 @@ class VOSDataset(Dataset):
         else:
             self.all_im_dual_transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomResizedCrop((384, 384), scale=(0.36,1.00), interpolation=InterpolationMode.BILINEAR)
+                transforms.RandomResizedCrop((640, 640), scale=(0.36,1.00), interpolation=InterpolationMode.BILINEAR)
             ])
 
             self.all_gt_dual_transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomResizedCrop((384, 384), scale=(0.36,1.00), interpolation=InterpolationMode.NEAREST)
+                transforms.RandomResizedCrop((640, 640), scale=(0.36,1.00), interpolation=InterpolationMode.NEAREST)
             ])
 
         # Final transform without randomness
