@@ -145,7 +145,7 @@ class XMemTrainer:
                         if it % self.log_image_interval == 0 and it != 0:
                             if self.logger is not None:
                                 images = {**data, **out}
-                                size = (384, 384)
+                                size = (640, 640)
                                 self.logger.log_cv2('train/pairs', pool_pairs(images, size, num_filled_objects), it)
 
             if self._is_train:

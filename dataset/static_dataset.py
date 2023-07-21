@@ -50,14 +50,14 @@ class StaticTransformDataset(Dataset):
 
         self.pair_im_dual_transform = transforms.Compose([
             transforms.RandomAffine(degrees=20, scale=(0.9,1.1), shear=10, interpolation=InterpolationMode.BICUBIC, fill=im_mean),
-            transforms.Resize(384, InterpolationMode.BICUBIC),
-            transforms.RandomCrop((384, 384), pad_if_needed=True, fill=im_mean),
+            transforms.Resize(640, InterpolationMode.BICUBIC),
+            transforms.RandomCrop((640, 640), pad_if_needed=True, fill=im_mean),
         ])
 
         self.pair_gt_dual_transform = transforms.Compose([
             transforms.RandomAffine(degrees=20, scale=(0.9,1.1), shear=10, interpolation=InterpolationMode.BICUBIC, fill=0),
-            transforms.Resize(384, InterpolationMode.NEAREST),
-            transforms.RandomCrop((384, 384), pad_if_needed=True, fill=0),
+            transforms.Resize(640, InterpolationMode.NEAREST),
+            transforms.RandomCrop((640, 640), pad_if_needed=True, fill=0),
         ])
 
 
@@ -130,7 +130,7 @@ class StaticTransformDataset(Dataset):
         indices = [idx, *np.random.randint(self.__len__(), size=additional_objects)]
 
         merged_images = None
-        merged_masks = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
+        merged_masks = np.zeros((self.num_frames, 640, 640), dtype=np.int64)
 
         for i, list_id in enumerate(indices):
             images, masks = self._get_sample(list_id)
@@ -148,8 +148,8 @@ class StaticTransformDataset(Dataset):
         target_objects = labels.tolist()
 
         # Generate one-hot ground-truth
-        cls_gt = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
-        first_frame_gt = np.zeros((1, self.max_num_obj, 384, 384), dtype=np.int64)
+        cls_gt = np.zeros((self.num_frames, 640, 640), dtype=np.int64)
+        first_frame_gt = np.zeros((1, self.max_num_obj, 640, 640), dtype=np.int64)
         for i, l in enumerate(target_objects):
             this_mask = (masks==l)
             cls_gt[this_mask] = i+1

@@ -70,12 +70,12 @@ class VOSDataset(Dataset):
             # Use a different cropping scheme for the blender dataset because the image size is different
             self.all_im_dual_transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomResizedCrop((384, 384), scale=(0.25, 1.00), interpolation=InterpolationMode.BILINEAR)
+                transforms.RandomResizedCrop((640, 640), scale=(0.25, 1.00), interpolation=InterpolationMode.BILINEAR)
             ])
 
             self.all_gt_dual_transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomResizedCrop((384, 384), scale=(0.25, 1.00), interpolation=InterpolationMode.NEAREST)
+                transforms.RandomResizedCrop((640, 640), scale=(0.25, 1.00), interpolation=InterpolationMode.NEAREST)
             ])
         else:
             self.all_im_dual_transform = transforms.Compose([
@@ -190,8 +190,8 @@ class VOSDataset(Dataset):
         masks = np.stack(masks, 0)
 
         # Generate one-hot ground-truth
-        cls_gt = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
-        first_frame_gt = np.zeros((1, self.max_num_obj, 384, 384), dtype=np.int64)
+        cls_gt = np.zeros((self.num_frames, 640, 640), dtype=np.int64)
+        first_frame_gt = np.zeros((1, self.max_num_obj, 640, 640), dtype=np.int64)
         for i, l in enumerate(target_objects):
             this_mask = (masks==l)
             cls_gt[this_mask] = i+1
