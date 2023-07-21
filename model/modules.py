@@ -305,8 +305,12 @@ class Decoder(nn.Module):
         y_shape = full_res_f4.shape[-1]
         #full_res_g4 = grid_sample(g4, x_shape, y_shape)
 
-        full_res_g4 = F.interpolate(g4.squeeze(1), size=(x_shape, y_shape), mode='bilinear', align_corners=False).unsqueeze(0)
-
+        
+        B, C, T, W, H = g4.size()
+        full_res_g4 = g4.reshape(B*C, T, W, H).clone()
+        full_res_g4 = F.interpolate(full_res_g4, size=(x_shape, y_shape), mode='bilinear', align_corners=False).unsqueeze(0)
+        full_res_g4 = full_res_g4.reshape(B, C, T, x_shape, y_shape)
+        
         full_res_g4 = self.full_res_fuser(full_res_f4, full_res_g4)
 
         full_res_logits = self.pred(F.relu(full_res_g4.flatten(start_dim=0, end_dim=1))) # move this one up with low-res g4
