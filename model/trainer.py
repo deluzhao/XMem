@@ -83,14 +83,10 @@ class XMemTrainer:
         num_objects = first_frame_gt.shape[2]
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
 
-        resize_frames = transforms.Compose([transforms.Resize((480,480))])
-
         B, C, T, W, H = frames.size() 
         frames_480p = frames.reshape(B*C, T, W, H).clone()
         frames_480p = F.interpolate(frames_480p, size=(480, 480), mode='bilinear', align_corners=False)
         frames_480p = frames_480p.reshape(B, C, T, 480, 480)
-
-        frames_480p = resize_frames(frames)
         print(frames.shape)
         print(frames_480p.shape)
         assert False
