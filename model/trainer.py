@@ -135,7 +135,7 @@ class XMemTrainer:
                 # No need to encode the last frame
                 if ti < (self.num_frames-1):
                     is_deep_update = np.random.rand() < self.deep_update_prob
-                    v16, hidden = self.XMem('encode_value', frames_480p[:,ti], f16[:,ti], hidden, F.interpolate(masks, size=(first_frame_gt.shape[-2], first_frame_gt.shape[-1]), mode='bilinear', align_corners=False), is_deep_update=is_deep_update)
+                    v16, hidden = self.XMem('encode_value', frames_480p[:,ti], f16[:,ti], hidden, F.interpolate(masks, size=(480, 480), mode='bilinear', align_corners=False), is_deep_update=is_deep_update)
                     values = torch.cat([values, v16.unsqueeze(3)], 3)
 
                 out[f'masks_{ti}'] = masks
