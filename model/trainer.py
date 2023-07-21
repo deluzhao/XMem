@@ -82,6 +82,9 @@ class XMemTrainer:
         num_objects = first_frame_gt.shape[2]
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
 
+        print(frames.shape)
+        assert False
+        
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
             key, shrinkage, selection, f16, f8, f4 = self.XMem('encode_key', frames)

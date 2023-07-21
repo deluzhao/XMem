@@ -126,8 +126,8 @@ for si, stage in enumerate(stages_to_perform):
         # //5 because we only have annotation for every five frames
         yv_dataset = VOSDataset(path.join(yv_root, 'JPEGImages'), 
                             path.join(yv_root, 'Annotations'), max_skip//5, is_bl=False, subset=load_sub_yv(), num_frames=config['num_frames'], finetune=finetune)
-        davis_dataset = VOSDataset(path.join(davis_root, 'JPEGImages', '480p'), 
-                            path.join(davis_root, 'Annotations', '480p'), max_skip, is_bl=False, subset=load_sub_davis(), num_frames=config['num_frames'], finetune=finetune)
+        davis_dataset = VOSDataset(path.join(davis_root, 'JPEGImages', 'Full-Resolution'), 
+                            path.join(davis_root, 'Annotations', 'Full-Resolution'), max_skip, is_bl=False, subset=load_sub_davis(), num_frames=config['num_frames'], finetune=finetune)
         train_dataset = ConcatDataset([davis_dataset]*5 + [yv_dataset])
 
         print(f'YouTube dataset size: {len(yv_dataset)}')
@@ -183,7 +183,7 @@ for si, stage in enumerate(stages_to_perform):
         # stage 2 or 3
         increase_skip_fraction = [0.1, 0.3, 0.9, 100]
         # VOS dataset, 480p is used for both datasets
-        yv_root = path.join(path.expanduser(config['yv_root']), 'train_480p')
+        yv_root = path.join(path.expanduser(config['yv_root']), 'train')
         davis_root = path.join(path.expanduser(config['davis_root']), '2017', 'trainval')
 
         train_sampler, train_loader = renew_vos_loader(5)
