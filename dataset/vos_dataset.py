@@ -36,14 +36,18 @@ class VOSDataset(Dataset):
         vid_list = sorted(os.listdir(self.im_root))
         # Pre-filtering
         for vid in vid_list:
-            if subset is not None:
-                if vid not in subset:
+            try:
+                if subset is not None:
+                    if vid not in subset:
+                        continue
+                frames = sorted(os.listdir(os.path.join(self.im_root, vid)))
+                if len(frames) < num_frames:
                     continue
-            frames = sorted(os.listdir(os.path.join(self.im_root, vid)))
-            if len(frames) < num_frames:
+                self.frames[vid] = frames
+                self.videos.append(vid)
+            except:
+                print(vid, "not accepted")
                 continue
-            self.frames[vid] = frames
-            self.videos.append(vid)
 
         print('%d out of %d videos accepted in %s.' % (len(self.videos), len(vid_list), im_root))
 
