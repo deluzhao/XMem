@@ -250,7 +250,7 @@ class Decoder(nn.Module):
         return hidden_state, logits
     
 class Renderer(nn.Module):
-    def __init__(self, val_dim, points=144):
+    def __init__(self, val_dim, points=768):
         super().__init__()
         self.pred = nn.Conv2d(val_dim + 1, 1, kernel_size=1)
         self.points = points
