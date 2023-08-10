@@ -141,11 +141,15 @@ class XMemTrainer:
 
                     N, C, H, W = upsampled_logits.shape
                     point_indices = point_indices.unsqueeze(1).expand(-1, C, -1).type(torch.FloatTensor)
-                    upsampled_logits = (
-                        upsampled_logits.reshape(N, C, H * W)
-                        .scatter_(2, point_indices, point_logits)
-                        .view(N, C, H, W)
-                    )
+
+                    try:
+                        upsampled_logits = (
+                            upsampled_logits.reshape(N, C, H * W)
+                            .scatter_(2, point_indices, point_logits)
+                            .view(N, C, H, W)
+                        )
+                    except:
+                        assert False, str(upsampled_logits.device) + str(point_logits.device) + str(point_indices.device)
 
                 masks = upsampled_logits
 
