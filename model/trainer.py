@@ -130,7 +130,7 @@ class XMemTrainer:
                     relevant_logits = point_sample(coarse_mask, point_coords, align_corners=False).unsqueeze(-1)
                     
                     point_logits = self.XMem('render', render_memory, relevant_logits).squeeze(-1)
-                    
+
                     # bg_logits = torch.ones_like(point_logits[:,0,:])
                     # for i in range(point_logits.shape[1]):
                     #     bg_logits -= point_logits[:,i,:]
@@ -140,7 +140,7 @@ class XMemTrainer:
                     # point_logits = torch.cat([point_logits, bg_logits], dim=1)
 
                     N, C, H, W = upsampled_logits.shape
-                    point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
+                    point_indices = point_indices.unsqueeze(1).expand(-1, C, -1).type(torch.FloatTensor)
                     upsampled_logits = (
                         upsampled_logits.reshape(N, C, H * W)
                         .scatter_(2, point_indices, point_logits)
