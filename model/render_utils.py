@@ -178,4 +178,4 @@ def calculate_uncertainty(sem_seg_logits):
         top2_scores = torch.topk(sem_seg_logits, k=2, dim=1)[0]
         uncertainty = (top2_scores[:, 1] - top2_scores[:, 0]).unsqueeze(1)
 
-    return uncertainty
+    return uncertainty.to(sem_seg_logits.device)
