@@ -130,7 +130,7 @@ def get_uncertain_point_coords_on_grid(uncertainty_map, num_points):
     w_step = 1.0 / float(W)
 
     num_points = min(H * W, num_points)
-    point_indices = torch.topk(uncertainty_map.view(R, H * W), k=num_points, dim=1)[1]
+    point_indices = torch.topk(uncertainty_map.view(R, H * W), k=num_points, dim=1)[1].to('cuda:0')
     point_coords = torch.zeros(R, num_points, 2, dtype=torch.float, device=uncertainty_map.device)
     point_coords[:, :, 0] = w_step / 2.0 + (point_indices % W).to(torch.float) * w_step
     point_coords[:, :, 1] = h_step / 2.0 + (point_indices // W).to(torch.float) * h_step
@@ -173,7 +173,10 @@ def calculate_uncertainty(sem_seg_logits):
     """
 
     if sem_seg_logits.shape[1] == 1:
-        return sem_seg_logits[:, 0].unsqueeze(1)
-    
-    top2_scores = torch.topk(sem_seg_logits, k=2, dim=1)[0]
-    return (top2_scores[:, 1] - top2_scores[:, 0]).unsqueeze(1)
+        uncertainty = sem_seg_logits[:, 0].unsqueeze(1)
+    else:
+        top2_scores = torch.topk(sem_seg_logits, k=2, dim=1)[0]
+        uncertainty = (top2_scores[:, 1] - top2_scores[:, 0]).unsqueeze(1)
+
+    uncertainty = uncertainty.to('cuda:0')
+    return uncertainty
