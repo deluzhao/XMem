@@ -252,11 +252,11 @@ class Decoder(nn.Module):
 class Renderer(nn.Module):
     def __init__(self, val_dim, points=144):
         super().__init__()
-        self.pred = nn.Conv2d(val_dim, 1, kernel_size=1)
+        self.pred = nn.Conv2d(val_dim + 1, 1, kernel_size=1)
         self.points = points
     
     def forward(self, fine, coarse):
         batch_size, num_objects = fine.shape[:2]
-
-        logits = self.pred(fine.flatten(0, 1))
+        features = torch.cat([fine, coarse.unsqueeze(2)], 2)
+        logits = self.pred(features.flatten(0, 1))
         return logits.view(batch_size, num_objects, self.points)
