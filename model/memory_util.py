@@ -79,11 +79,14 @@ def get_affinity(mk, ms, qk, qe):
     affinity = do_softmax(similarity)
     return affinity
 
-def readout(affinity, mv):
+def readout(affinity, mv, render=None):
     B, CV, T, H, W = mv.shape
 
     mo = mv.view(B, CV, T*H*W) 
     mem = torch.bmm(mo, affinity)
-    mem = mem.view(B, CV, H, W)
+    if render is not None:
+        mem = mem.view(B, CV, render, 1)
+    else:
+        mem = mem.view(B, CV, H, W)
 
     return mem

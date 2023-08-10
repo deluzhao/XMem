@@ -1,9 +1,10 @@
 from inference.memory_manager import MemoryManager
-from inference.ivfpq_manager import IVFPQManager
+#from inference.ivfpq_manager import IVFPQManager
 from model.network import XMem
 from model.aggregate import aggregate
 import torch
 from util.tensor_util import pad_divide_by, unpad
+from model.render_utils import *
 
 
 class InferenceCore:
@@ -27,7 +28,8 @@ class InferenceCore:
         if not self.deep_update_sync:
             self.last_deep_update_ti = -self.deep_update_every
         if self.ivfpq:
-            self.memory = IVFPQManager(config=self.config)
+            #self.memory = IVFPQManager(config=self.config)
+            self.memory = MemoryManager(config=self.config)
         else:
             self.memory = MemoryManager(config=self.config)
 
@@ -71,6 +73,40 @@ class InferenceCore:
             hidden, _, pred_prob_with_bg = self.network.segment(multi_scale_features, memory_readout, 
                                     self.memory.get_hidden(), h_out=is_normal_update, strip_bg=False)
             
+
+            upsampled_logits = pred_prob_with_bg.clone()
+            for _ in range(2):
+                upsampled_logits = F.interpolate(
+                    upsampled_logits, scale_factor=2, mode="bilinear", align_corners=False
+                )
+                uncertainty_map = calculate_uncertainty(upsampled_logits)
+                point_indices, point_coords = get_uncertain_point_coords_on_grid(
+                                    uncertainty_map, 768)
+                relevant_key = point_sample(key, point_coords, align_corners=False).unsqueeze(-1)
+                relevant_sel = point_sample(selection, point_coords, align_corners=False).unsqueeze(-1)
+                
+                render_memory = self.memory.match_memory(relevant_key, relevant_sel)
+                relevant_logits = point_sample(pred_prob_with_bg, point_coords, align_corners=False).unsqueeze(-1)
+                
+                point_logits = self.network.render(render_memory, relevant_logits).squeeze(-1)
+                bg_logits = torch.ones_like(point_logits[:,0,:])
+                for i in range(point_logits.shape[1]):
+                    bg_logits -= point_logits[:,i,:]
+
+                bg_logits = torch.nn.functional.relu(bg_logits).unsqueeze(1)
+                
+                point_logits = torch.cat([point_logits, bg_logits], dim=1)
+
+                N, C, H, W = upsampled_logits.shape
+                point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
+                upsampled_logits = (
+                    upsampled_logits.reshape(N, C, H * W)
+                    .scatter_(2, point_indices, point_logits)
+                    .view(N, C, H, W)
+                )
+            pred_prob_with_bg = upsampled_logits
+            
+
             # remove batch dim
             pred_prob_with_bg = pred_prob_with_bg[0]
             pred_prob_no_bg = pred_prob_with_bg[1:]

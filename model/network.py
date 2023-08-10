@@ -12,6 +12,7 @@ import torch.nn as nn
 from model.aggregate import aggregate
 from model.modules import *
 from model.memory_util import *
+from model.render_utils import *
 
 
 class XMem(nn.Module):
@@ -33,6 +34,8 @@ class XMem(nn.Module):
         self.key_proj = KeyProjection(1024, self.key_dim)
 
         self.decoder = Decoder(self.value_dim, self.hidden_dim)
+
+        self.renderer = Renderer(self.value_dim)
 
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)
@@ -87,7 +90,7 @@ class XMem(nn.Module):
     # Used in training only. 
     # This step is replaced by MemoryManager in test time
     def read_memory(self, query_key, query_selection, memory_key, 
-                    memory_shrinkage, memory_value):
+                    memory_shrinkage, memory_value, render=None):
         """
         query_key       : B * CK * H * W
         query_selection : B * CK * H * W
@@ -99,7 +102,7 @@ class XMem(nn.Module):
         memory_value = memory_value.flatten(start_dim=1, end_dim=2)
 
         affinity = get_affinity(memory_key, memory_shrinkage, query_key, query_selection)
-        memory = readout(affinity, memory_value)
+        memory = readout(affinity, memory_value, render)
         memory = memory.view(batch_size, num_objects, self.value_dim, *memory.shape[-2:])
 
         return memory
@@ -108,6 +111,10 @@ class XMem(nn.Module):
                     hidden_state, selector=None, h_out=True, strip_bg=True): 
 
         hidden_state, logits = self.decoder(*multi_scale_features, hidden_state, memory_readout, h_out=h_out)
+        
+        batch_size, num_objects = memory_readout.shape[:2]
+        logits = logits.view(batch_size, num_objects, *logits.shape[-2:])
+
         prob = torch.sigmoid(logits)
         if selector is not None:
             prob = prob * selector
@@ -119,6 +126,9 @@ class XMem(nn.Module):
 
         return hidden_state, logits, prob
 
+    def render(self, fine, coarse):
+        return self.renderer(fine, coarse)
+        
     def forward(self, mode, *args, **kwargs):
         if mode == 'encode_key':
             return self.encode_key(*args, **kwargs)
@@ -128,6 +138,8 @@ class XMem(nn.Module):
             return self.read_memory(*args, **kwargs)
         elif mode == 'segment':
             return self.segment(*args, **kwargs)
+        elif mode == 'render':
+            return self.render(*args, **kwargs)
         else:
             raise NotImplementedError
 

@@ -10,6 +10,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
+
+from model.render_utils import *
 
 from model.network import XMem
 from model.losses import LossComputer
@@ -105,6 +108,46 @@ class XMemTrainer:
                                         ref_keys, ref_shrinkage, ref_values)
                 hidden, logits, masks = self.XMem('segment', (f16[:,ti], f8[:,ti], f4[:,ti]), memory_readout, 
                         hidden, selector, h_out=(ti < (self.num_frames-1)))
+                
+                coarse_mask = masks
+                upsampled_logits = coarse_mask.clone()
+                for _ in range(2):
+                    upsampled_logits = F.interpolate(
+                        upsampled_logits, scale_factor=2, mode="bilinear", align_corners=False
+                    )
+                    uncertainty_map = calculate_uncertainty(upsampled_logits)
+                    point_indices, point_coords = get_uncertain_point_coords_on_grid(
+                                        uncertainty_map, 768)
+                    
+                    relevant_key = point_sample(key[:,:,ti], point_coords, align_corners=False).unsqueeze(-1)
+
+                    if selection is not None:
+                        relevant_sel = point_sample(selection[:,:,ti], point_coords, align_corners=False).unsqueeze(-1)
+                    
+                    render_memory = self.XMem('read_memory', relevant_key, relevant_sel if selection is not None else None, 
+                                        ref_keys, ref_shrinkage, ref_values, render=768)
+                    
+                    relevant_logits = point_sample(coarse_mask, point_coords, align_corners=False).unsqueeze(-1)
+                    
+                    point_logits = self.XMem('render', render_memory, relevant_logits).squeeze(-1)
+                    
+                    # bg_logits = torch.ones_like(point_logits[:,0,:])
+                    # for i in range(point_logits.shape[1]):
+                    #     bg_logits -= point_logits[:,i,:]
+
+                    # bg_logits = torch.nn.functional.relu(bg_logits).unsqueeze(1)
+                    
+                    # point_logits = torch.cat([point_logits, bg_logits], dim=1)
+
+                    N, C, H, W = upsampled_logits.shape
+                    point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
+                    upsampled_logits = (
+                        upsampled_logits.reshape(N, C, H * W)
+                        .scatter_(2, point_indices, point_logits)
+                        .view(N, C, H, W)
+                    )
+
+                masks = upsampled_logits
 
                 # No need to encode the last frame
                 if ti < (self.num_frames-1):

@@ -244,7 +244,19 @@ class Decoder(nn.Module):
         else:
             hidden_state = None
         
-        logits = F.interpolate(logits, scale_factor=4, mode='bilinear', align_corners=False)
-        logits = logits.view(batch_size, num_objects, *logits.shape[-2:])
+        # logits = F.interpolate(logits, scale_factor=4, mode='bilinear', align_corners=False)
+        # logits = logits.view(batch_size, num_objects, *logits.shape[-2:])
 
         return hidden_state, logits
+    
+class Renderer(nn.Module):
+    def __init__(self, val_dim, points=768):
+        super().__init__()
+        self.pred = nn.Conv2d(val_dim, 1, kernel_size=1)
+        self.points = points
+    
+    def forward(self, fine, coarse):
+        batch_size, num_objects = fine.shape[:2]
+
+        logits = self.pred(fine.flatten(0, 1))
+        return logits.view(batch_size, num_objects, self.points)
