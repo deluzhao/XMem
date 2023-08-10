@@ -108,26 +108,26 @@ class XMem(nn.Module):
         return memory
 
     def segment(self, multi_scale_features, memory_readout,
-                    hidden_state, selector=None, h_out=True, strip_bg=True): 
+                    hidden_state, selector=None, h_out=True): 
 
         hidden_state, logits = self.decoder(*multi_scale_features, hidden_state, memory_readout, h_out=h_out)
         
         batch_size, num_objects = memory_readout.shape[:2]
         logits = logits.view(batch_size, num_objects, *logits.shape[-2:])
 
-        prob = torch.sigmoid(logits)
-        if selector is not None:
-            prob = prob * selector
-            
-        logits, prob = aggregate(prob, dim=1, return_logits=True)
-        if strip_bg:
-            # Strip away the background
-            prob = prob[:, 1:]
-
-        return hidden_state, logits, prob
+        return hidden_state, logits
 
     def render(self, fine, coarse):
-        return self.renderer(fine, coarse)
+        logits = self.renderer(fine, coarse)
+
+        return logits
+        # render_mask = torch.sigmoid(logits)
+
+        # if selector is not None:
+        #     render_mask = render_mask * selector
+
+        # return aggregate(render_mask, dim=1, return_logits=True)[0]
+
         
     def forward(self, mode, *args, **kwargs):
         if mode == 'encode_key':

@@ -70,11 +70,13 @@ class InferenceCore:
         if need_segment:
             memory_readout = self.memory.match_memory(key, selection).unsqueeze(0)
 
-            hidden, _, pred_prob_with_bg = self.network.segment(multi_scale_features, memory_readout, 
-                                    self.memory.get_hidden(), h_out=is_normal_update, strip_bg=False)
+            hidden, coarse_logits = self.network.segment(multi_scale_features, memory_readout, 
+                                    self.memory.get_hidden(), h_out=is_normal_update)
             
+            pred_prob_with_bg = torch.sigmoid(coarse_logits)
+            coarse_logits, pred_prob_with_bg = aggregate(pred_prob_with_bg, dim=1, return_logits=True)
 
-            upsampled_logits = pred_prob_with_bg.clone()
+            upsampled_logits = coarse_logits.clone()
             for _ in range(2):
                 upsampled_logits = F.interpolate(
                     upsampled_logits, scale_factor=2, mode="bilinear", align_corners=False
@@ -86,16 +88,17 @@ class InferenceCore:
                 relevant_sel = point_sample(selection, point_coords, align_corners=False).unsqueeze(-1)
                 
                 render_memory = self.memory.match_memory(relevant_key, relevant_sel)
-                relevant_logits = point_sample(pred_prob_with_bg, point_coords, align_corners=False).unsqueeze(-1)
+                relevant_logits = point_sample(coarse_logits, point_coords, align_corners=False).unsqueeze(-1)
                 
                 point_logits = self.network.render(render_memory, relevant_logits).squeeze(-1)
-                bg_logits = torch.ones_like(point_logits[:,0,:])
-                for i in range(point_logits.shape[1]):
-                    bg_logits -= point_logits[:,i,:]
 
-                bg_logits = torch.nn.functional.relu(bg_logits).unsqueeze(1)
+                # bg_logits = torch.ones_like(point_logits[:,0,:])
+                # for i in range(point_logits.shape[1]):
+                #     bg_logits -= point_logits[:,i,:]
+
+                # bg_logits = torch.nn.functional.relu(bg_logits).unsqueeze(1)
                 
-                point_logits = torch.cat([point_logits, bg_logits], dim=1)
+                # point_logits = torch.cat([point_logits, bg_logits], dim=1)
 
                 N, C, H, W = upsampled_logits.shape
                 point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
