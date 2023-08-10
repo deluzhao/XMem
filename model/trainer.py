@@ -140,7 +140,7 @@ class XMemTrainer:
                     # point_logits = torch.cat([point_logits, bg_logits], dim=1)
 
                     N, C, H, W = upsampled_logits.shape
-                    point_indices = point_indices.unsqueeze(1).expand(-1, C, -1).type(torch.FloatTensor).to(point_logits.device)
+                    point_indices = point_indices.unsqueeze(1).expand(-1, C, -1).to(point_logits.device)
 
                     try:
                         upsampled_logits = (
