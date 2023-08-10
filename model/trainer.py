@@ -120,7 +120,7 @@ class XMemTrainer:
                     )
                     uncertainty_map = calculate_uncertainty(upsampled_logits)
                     point_indices, point_coords = get_uncertain_point_coords_on_grid(
-                                        uncertainty_map, 144)
+                                        uncertainty_map, 768)
                     
                     relevant_key = point_sample(key[:,:,ti], point_coords, align_corners=False).unsqueeze(-1)
 
@@ -128,11 +128,11 @@ class XMemTrainer:
                         relevant_sel = point_sample(selection[:,:,ti], point_coords, align_corners=False).unsqueeze(-1)
                     
                     render_memory = self.XMem('read_memory', relevant_key, relevant_sel if selection is not None else None, 
-                                        ref_keys, ref_shrinkage, ref_values, render=144)
+                                        ref_keys, ref_shrinkage, ref_values, render=768)
                     
                     relevant_logits = point_sample(logits, point_coords, align_corners=False).unsqueeze(-1)
                     point_logits = self.XMem('render', render_memory, relevant_logits).squeeze(-1).type(upsampled_logits.dtype)
-                    
+
                     # bg_logits = torch.ones_like(point_logits[:,0,:])
                     # for i in range(point_logits.shape[1]):
                     #     bg_logits -= point_logits[:,i,:]
