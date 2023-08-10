@@ -129,7 +129,7 @@ class XMemTrainer:
                     
                     relevant_logits = point_sample(coarse_mask, point_coords, align_corners=False).unsqueeze(-1)
                     
-                    point_logits = self.XMem('render', render_memory, relevant_logits).squeeze(-1)
+                    point_logits = self.XMem('render', render_memory, relevant_logits).squeeze(-1).type(upsampled_logits.dtype)
 
                     # bg_logits = torch.ones_like(point_logits[:,0,:])
                     # for i in range(point_logits.shape[1]):
