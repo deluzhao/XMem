@@ -62,6 +62,7 @@ parser.add_argument('--save_scores', action='store_true')
 parser.add_argument('--flip', action='store_true')
 parser.add_argument('--size', default=480, type=int, 
             help='Resize the shorter side to this size. -1 to use original resolution. ')
+parser.add_argument('--render_pixels', default=768, type=int)
 
 args = parser.parse_args()
 config = vars(args)
@@ -206,14 +207,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
                 labels = None
 
             # Run the model on this frame
-            if ti % 20 == 1:
-                prob = processor.step(rgb, msk, labels, end=(ti==vid_length-1), print_mem=True)
-            else:
-                prob = processor.step(rgb, msk, labels, end=(ti==vid_length-1))
-
-            # Upsample to original size if needed
-            if need_resize:
-                prob = F.interpolate(prob.unsqueeze(1), shape, mode='bilinear', align_corners=False)[:,0]
+            prob = processor.step(rgb, msk, labels, end=(ti==vid_length-1), need_resize=need_resize, final_shape=shape)
 
             end.record()
             torch.cuda.synchronize()

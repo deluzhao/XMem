@@ -47,7 +47,7 @@ class InferenceCore:
         # self.all_labels = [l.item() for l in all_labels]
         self.all_labels = all_labels
 
-    def step(self, image, mask=None, valid_labels=None, end=False, print_mem=False, need_resize=False, final_shape=None):
+    def step(self, image, mask=None, valid_labels=None, end=False, need_resize=False, final_shape=None):
         # image: 3*H*W
         # mask: num_objects*H*W or None
         self.curr_ti += 1
@@ -107,10 +107,10 @@ class InferenceCore:
                 )
 
             if need_resize and final_shape is not None:
-                upsampled_logits = F.interpolate(
+                returned_logits = F.interpolate(
                     upsampled_logits, final_shape, mode="bilinear", align_corners=False
                 )
-                uncertainty_map = calculate_uncertainty(upsampled_logits)
+                uncertainty_map = calculate_uncertainty(returned_logits)
                 point_indices, point_coords = get_uncertain_point_coords_on_grid(
                                     uncertainty_map, self.render_pixels)
                 relevant_key = point_sample(key, point_coords, align_corners=False).unsqueeze(-1)
@@ -129,13 +129,18 @@ class InferenceCore:
                 
                 # point_logits = torch.cat([point_logits, bg_logits], dim=1)
 
-                N, C, H, W = upsampled_logits.shape
+                N, C, H, W = returned_logits.shape
                 point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
-                upsampled_logits = (
-                    upsampled_logits.reshape(N, C, H * W)
+                returned_logits = (
+                    returned_logits.reshape(N, C, H * W)
                     .scatter_(2, point_indices, point_logits)
                     .view(N, C, H, W)
                 )
+
+                returned_pred = torch.sigmoid(returned_logits)
+                returned_logits, returned_pred = aggregate(returned_pred, dim=1, return_logits=True)
+                returned_pred = returned_pred[0]
+
 
             coarse_logits = upsampled_logits
             
@@ -151,7 +156,7 @@ class InferenceCore:
 
 
         else:
-            pred_prob_no_bg = pred_prob_with_bg = None
+            pred_prob_no_bg = pred_prob_with_bg = returned_pred = None
 
         # use the input mask if any
         if mask is not None:
@@ -185,5 +190,5 @@ class InferenceCore:
                 self.memory.set_hidden(hidden)
                 self.last_deep_update_ti = self.curr_ti
                 
-        return unpad(pred_prob_with_bg, self.pad)
+        return unpad(returned_pred, self.pad)
 
