@@ -22,6 +22,7 @@ class Configuration():
         parser.add_argument('--key_dim', default=64, type=int)
         parser.add_argument('--value_dim', default=512, type=int)
         parser.add_argument('--hidden_dim', default=64, help='Set to =0 to disable', type=int)
+        parser.add_argument('--render_pixels', default=768, type=int)
 
         parser.add_argument('--deep_update_prob', default=0.2, type=float)
 

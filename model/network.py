@@ -35,7 +35,7 @@ class XMem(nn.Module):
 
         self.decoder = Decoder(self.value_dim, self.hidden_dim)
 
-        self.renderer = Renderer(self.value_dim)
+        self.renderer = Renderer(self.value_dim, points=config['render_pixels'])
 
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)

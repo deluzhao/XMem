@@ -15,6 +15,7 @@ class InferenceCore:
         self.deep_update_every = config['deep_update_every']
         self.enable_long_term = config['enable_long_term']
         self.ivfpq = config['ivfpq']
+        self.render_pixels = config['render_pixels']
 
         # if deep_update_every < 0, synchronize deep update with memory frame
         self.deep_update_sync = (self.deep_update_every < 0)
@@ -46,7 +47,7 @@ class InferenceCore:
         # self.all_labels = [l.item() for l in all_labels]
         self.all_labels = all_labels
 
-    def step(self, image, mask=None, valid_labels=None, end=False, print_mem=False):
+    def step(self, image, mask=None, valid_labels=None, end=False, print_mem=False, need_resize=False, final_shape=None):
         # image: 3*H*W
         # mask: num_objects*H*W or None
         self.curr_ti += 1
@@ -80,7 +81,38 @@ class InferenceCore:
                 )
                 uncertainty_map = calculate_uncertainty(upsampled_logits)
                 point_indices, point_coords = get_uncertain_point_coords_on_grid(
-                                    uncertainty_map, 768)
+                                    uncertainty_map, self.render_pixels)
+                relevant_key = point_sample(key, point_coords, align_corners=False).unsqueeze(-1)
+                relevant_sel = point_sample(selection, point_coords, align_corners=False).unsqueeze(-1)
+                
+                render_memory = self.memory.match_memory(relevant_key, relevant_sel)
+                relevant_logits = point_sample(coarse_logits, point_coords, align_corners=False).unsqueeze(-1)
+                
+                point_logits = self.network.render(render_memory, relevant_logits).squeeze(-1)
+
+                # bg_logits = torch.ones_like(point_logits[:,0,:])
+                # for i in range(point_logits.shape[1]):
+                #     bg_logits -= point_logits[:,i,:]
+
+                # bg_logits = torch.nn.functional.relu(bg_logits).unsqueeze(1)
+                
+                # point_logits = torch.cat([point_logits, bg_logits], dim=1)
+
+                N, C, H, W = upsampled_logits.shape
+                point_indices = point_indices.unsqueeze(1).expand(-1, C, -1)
+                upsampled_logits = (
+                    upsampled_logits.reshape(N, C, H * W)
+                    .scatter_(2, point_indices, point_logits)
+                    .view(N, C, H, W)
+                )
+
+            if need_resize and final_shape is not None:
+                upsampled_logits = F.interpolate(
+                    upsampled_logits, final_shape, mode="bilinear", align_corners=False
+                )
+                uncertainty_map = calculate_uncertainty(upsampled_logits)
+                point_indices, point_coords = get_uncertain_point_coords_on_grid(
+                                    uncertainty_map, self.render_pixels)
                 relevant_key = point_sample(key, point_coords, align_corners=False).unsqueeze(-1)
                 relevant_sel = point_sample(selection, point_coords, align_corners=False).unsqueeze(-1)
                 
@@ -154,3 +186,4 @@ class InferenceCore:
                 self.last_deep_update_ti = self.curr_ti
                 
         return unpad(pred_prob_with_bg, self.pad)
+
