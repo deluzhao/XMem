@@ -105,7 +105,7 @@ class InferenceCore:
                     .view(N, C, H, W)
                 )
 
-            pred_prob_with_bg = upsampled_logits
+            coarse_logits = upsampled_logits
             
             
             pred_prob_with_bg = torch.sigmoid(coarse_logits)
