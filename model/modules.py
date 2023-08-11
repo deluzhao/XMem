@@ -256,6 +256,8 @@ class Renderer(nn.Module):
         self.points = points
     
     def forward(self, fine, coarse):
+        if len(fine.shape) == 4:
+            fine = fine.unsqueeze(0)
         batch_size, num_objects = fine.shape[:2]
         features = torch.cat([fine, coarse.unsqueeze(2)], 2)
         logits = self.pred(features.flatten(0, 1))

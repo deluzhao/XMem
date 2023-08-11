@@ -72,9 +72,6 @@ class InferenceCore:
 
             hidden, coarse_logits = self.network.segment(multi_scale_features, memory_readout, 
                                     self.memory.get_hidden(), h_out=is_normal_update)
-            
-            pred_prob_with_bg = torch.sigmoid(coarse_logits)
-            coarse_logits, pred_prob_with_bg = aggregate(pred_prob_with_bg, dim=1, return_logits=True)
 
             upsampled_logits = coarse_logits.clone()
             for _ in range(2):
@@ -107,8 +104,12 @@ class InferenceCore:
                     .scatter_(2, point_indices, point_logits)
                     .view(N, C, H, W)
                 )
+
             pred_prob_with_bg = upsampled_logits
             
+            
+            pred_prob_with_bg = torch.sigmoid(coarse_logits)
+            coarse_logits, pred_prob_with_bg = aggregate(pred_prob_with_bg, dim=1, return_logits=True)
 
             # remove batch dim
             pred_prob_with_bg = pred_prob_with_bg[0]
