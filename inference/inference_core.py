@@ -174,6 +174,7 @@ class InferenceCore:
                     # non-labelled objects are copied from the predicted mask
                     mask[shift_by_one_non_labels] = pred_prob_no_bg[shift_by_one_non_labels]
             pred_prob_with_bg = aggregate(mask, dim=0)
+            returned_pred = torch.nn.functional.interpolate(pred_prob_with_bg.unsqueeze(1), final_shape, mode='bilinear', align_corners=False)[:,0]
 
             # also create new hidden states
             self.memory.create_hidden_state(len(self.all_labels), key)
