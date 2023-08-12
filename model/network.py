@@ -207,4 +207,8 @@ class XMem(nn.Module):
                         print('Zero-initialized padding.')
                     src_dict[k] = torch.cat([src_dict[k], pads], 1)
 
-        self.load_state_dict(src_dict)
+        try:
+            self.load_state_dict(src_dict, strict=False)
+        except:
+            src_dict['value_encoder.conv1.weight'] = src_dict['value_encoder.conv1.weight'][:,:4,:,:]
+            self.load_state_dict(src_dict, strict=False)
